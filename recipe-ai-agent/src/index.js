@@ -9,23 +9,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// app.post("/recipe-agent", async (req, res) => {
-//     try {
-//         const { query } = req.body;
+app.post("/recipe-agent", async (req, res) => {
+    try {
+        const { query } = req.body;
 
-//         // Step 1: AI extracts intent
-//         const filters = await aiService.parseQuery(query);
+        // 🔹 Step 1: AI extracts filters
+        const filters = await aiService.parseQuery(query);
 
-//         // Step 2: Fetch recipes
-//         const recipes = await recipeService.getRecipes(filters);
+        console.log("AI Filters:", filters);
 
-//         res.json({ filters, recipes });
+        // 🔹 Step 2: Fetch recipes from DB
+        let recipes = await recipeService.getRecipes(filters);
 
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: "Something went wrong" });
-//     }
-// });
+        // 🔥 Step 3: Smart filtering (protein goal)
+        if (filters.goal === "protein") {
+            recipes = recipes.sort((a, b) => b.protein - a.protein);
+        }
+
+        res.json({
+            query,
+            filters,
+            recipes
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
